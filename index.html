@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUS SEARCHER - VAGGELIS FARMAKIS</title>
+    <!-- Leaflet for maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Animation library -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.ico') }}" type="image/x-icon">
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+</head>
+<body>
+    <!-- Preloader -->
+    <div id="preloader" class="preloader">
+        <div class="loader">
+            <div class="bus-icon">
+                <img src="{{ url_for('static', filename='images/bus-icon.png') }}" alt="Bus Icon" width="64" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2264%22 height=%2264%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%2390e4fc%22 rx=%2220%22 ry=%2220%22/><text x=%2250%%22 y=%2250%%22 font-size=%2250%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 fill=%22white%22>🚌</text></svg>';">
+            </div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <div class="loading-text">Loading Bus Tracker</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Notification center -->
+        <div id="notification-center" class="notification-center">
+            <!-- Notifications will be added here dynamically -->
+        </div>
+
+        <!-- Sidebar with bus information -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>
+                    <span class="logo-icon">
+                        <img src="{{ url_for('static', filename='images/bus-icon.png') }}" alt="Bus Icon" width="32" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%2390e4fc%22 rx=%2220%22 ry=%2220%22/><text x=%2250%%22 y=%2250%%22 font-size=%2250%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22 fill=%22white%22>🚌</text></svg>';">
+                    </span>
+                    <span class="logo-text">BUS SEARCHER</span>
+                </h1>
+                <p class="subtitle">by Vaggelis Farmakis</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="buses">
+                    <span class="material-icons">directions_bus</span>
+                    <span class="tab-text">BUSES</span>
+                </div>
+                <div class="tab" data-tab="stops">
+                    <span class="material-icons">bus_alert</span>
+                    <span class="tab-text">STOPS</span>
+                </div>
+                <div class="tab" data-tab="settings">
+                    <span class="material-icons">settings</span>
+                    <span class="tab-text">SETTINGS</span>
+                </div>
+            </div>
+
+            <!-- Bus information content -->
+            <div id="buses-content" class="tab-content active">
+                <div class="search-container">
+                    <div class="search-box">
+                        <span class="material-icons">search</span>
+                        <input type="text" id="bus-search" placeholder="Search for bus or stop...">
+                    </div>
+                </div>
+                
+                <div class="bus-cards-container">
+                    <!-- Bus cards will be added here dynamically -->
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading bus information...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stops content tab -->
+            <div id="stops-content" class="tab-content">
+                <div class="stops-header">
+                    <h2>Bus Stops</h2>
+                    <p class="stops-limit-warning">Maximum 5 stops can be active at once</p>
+                </div>
+                <div class="search-container">
+                    <div class="search-box">
+                        <span class="material-icons">search</span>
+                        <input type="text" id="stop-search" placeholder="Filter bus stops...">
+                    </div>
+                </div>
+                
+                <div class="stops-container">
+                    <!-- Stops will be added here dynamically -->
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">Loading bus stops...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings content -->
+            <div id="settings-content" class="tab-content">
+                <div class="settings-section">
+                    <h2>Appearance</h2>
+                    <div class="setting-item">
+                        <span>Dark Mode</span>
+                        <label class="switch">
+                            <input type="checkbox" id="dark-mode-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>Map Style</span>
+                        <select id="map-style">
+                            <option value="standard">Standard</option>
+                            <option value="satellite">Satellite</option>
+                            <option value="dark">Dark</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Notifications</h2>
+                    <div class="setting-item">
+                        <span>Sound Alerts</span>
+                        <label class="switch">
+                            <input type="checkbox" id="sound-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>Alert Threshold (minutes)</span>
+                        <input type="number" id="alert-threshold" min="1" max="10" value="3">
+                    </div>
+                    <div class="setting-item">
+                        <span>Test Sound</span>
+                        <button id="test-sound" class="btn-primary">
+                            <span class="material-icons">volume_up</span>
+                            Play
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>Data Updates</h2>
+                    <div class="setting-item">
+                        <span>Update Interval (seconds)</span>
+                        <select id="update-interval">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="30">30</option>
+                            <option value="60">60</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h2>Path Display</h2>
+                    <div class="setting-item">
+                        <span>Show Bus Paths</span>
+                        <label class="switch">
+                            <input type="checkbox" id="path-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>Path Color</span>
+                        <select id="path-color">
+                            <option value="#90e4fc">Blue</option>
+                            <option value="#ff79b4">Pink</option>
+                            <option value="#52ff7f">Green</option>
+                            <option value="#ffd700">Yellow</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="settings-section" id="test-section">
+                    <h2>Testing Tools</h2>
+                    <div class="setting-item">
+                        <span>Generate Random Test Bus</span>
+                        <button id="generate-test-bus" class="btn-primary">
+                            <span class="material-icons">science</span>
+                            Generate
+                        </button>
+                    </div>
+                    <div class="setting-item">
+                        <span>Clear Test Buses</span>
+                        <button id="clear-test-buses" class="btn-primary" style="background-color: var(--warning-color);">
+                            <span class="material-icons">delete</span>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h2>About</h2>
+                    <div class="about-app">
+                        <p>BUS SEARCHER Web Edition</p>
+                        <p>Version 2.0</p>
+                        <p>&copy; 2025 Vaggelis Farmakis</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map container -->
+        <div class="map-container">
+            <div class="map-controls">
+                <button id="center-map" class="map-control-btn" title="Center Map">
+                    <span class="material-icons">my_location</span>
+                </button>
+                <button id="zoom-in" class="map-control-btn" title="Zoom In">
+                    <span class="material-icons">add</span>
+                </button>
+                <button id="zoom-out" class="map-control-btn" title="Zoom Out">
+                    <span class="material-icons">remove</span>
+                </button>
+                <button id="toggle-fullscreen" class="map-control-btn" title="Toggle Fullscreen">
+                    <span class="material-icons">fullscreen</span>
+                </button>
+                <button id="toggle-bus-paths" class="map-control-btn" title="Toggle Bus Paths">
+                    <span class="material-icons">route</span>
+                </button>
+            </div>
+            
+            <div id="map"></div>
+            
+            <div class="map-overlay">
+                <div class="map-status">
+                    <div class="status-item">
+                        <span class="material-icons">access_time</span>
+                        <span id="last-update">Never</span>
+                    </div>
+                    <div class="status-item">
+                        <span id="status-indicator" class="status-indicator online"></span>
+                        <span id="connection-status">Connected</span>
+                    </div>
+                </div>
+                
+                <div class="quick-info" id="quick-info">
+                    <div class="quick-info-header">
+                        <h3>Nearest Bus</h3>
+                        <span class="material-icons close-quick-info">close</span>
+                    </div>
+                    <div class="quick-info-content">
+                        <div id="nearest-bus">
+                            <div class="no-data">No buses nearby</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bus information card template -->
+    <template id="bus-card-template">
+        <div class="bus-card">
+            <div class="bus-card-header">
+                <div class="stop-info">
+                    <span class="stop-name"></span>
+                    <span class="stop-id"></span>
+                </div>
+                <div class="favorite-btn">
+                    <span class="material-icons">star_border</span>
+                </div>
+            </div>
+            <div class="bus-card-body">
+                <div class="bus-id-container">
+                    <div class="bus-id"></div>
+                </div>
+                <div class="bus-details">
+                    <div class="bus-name"></div>
+                    <div class="time-container">
+                        <div class="time-icon">
+                            <span class="material-icons">schedule</span>
+                        </div>
+                        <div class="bus-time"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="bus-card-footer">
+                <button class="track-bus-btn">
+                    <span class="material-icons">location_on</span>
+                    Track
+                </button>
+                <div class="progress-bar">
+                    <div class="progress"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Map marker popup templates -->
+    <template id="bus-popup-template">
+        <div class="bus-popup">
+            <div class="popup-header">
+                <div class="bus-id"></div>
+                <div class="bus-name"></div>
+            </div>
+            <div class="popup-body">
+                <div class="info-row">
+                    <span class="material-icons">location_on</span>
+                    <span class="stop-name"></span>
+                </div>
+                <div class="info-row">
+                    <span class="material-icons">schedule</span>
+                    <span class="arrival-time"></span>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <button class="popup-btn">
+                    <span class="material-icons">navigation</span>
+                    Navigate
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="stop-popup-template">
+        <div class="stop-popup">
+            <div class="popup-header">
+                <div class="stop-name"></div>
+                <div class="stop-id"></div>
+            </div>
+            <div class="popup-body">
+                <div class="incoming-buses"></div>
+                <div class="no-buses hidden">No incoming buses</div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Stop item template -->
+    <template id="stop-item-template">
+        <div class="stop-item">
+            <div class="stop-info">
+                <div class="stop-name"></div>
+                <div class="stop-id"></div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" class="stop-toggle">
+                <span class="slider round"></span>
+            </label>
+        </div>
+    </template>
+
+    <!-- Notification template -->
+    <template id="notification-template">
+        <div class="notification">
+            <div class="notification-icon">
+                <span class="material-icons"></span>
+            </div>
+            <div class="notification-content">
+                <div class="notification-title"></div>
+                <div class="notification-message"></div>
+            </div>
+            <div class="notification-close">
+                <span class="material-icons">close</span>
+            </div>
+        </div>
+    </template>
+
+    <!-- Audio elements for notifications -->
+    <audio id="bus-arriving-sound" preload="auto" src="{{ url_for('static', filename='audio/bus-arriving.mp3') }}" onerror="this.onerror=null; console.error('Failed to load audio file: bus-arriving.mp3');"></audio>
+    <audio id="notification-sound" preload="auto" src="{{ url_for('static', filename='audio/notification.mp3') }}" onerror="this.onerror=null; console.error('Failed to load audio file: notification.mp3');"></audio>
+    <audio id="error-sound" preload="auto" src="{{ url_for('static', filename='audio/error.mp3') }}" onerror="this.onerror=null; console.error('Failed to load audio file: error.mp3');"></audio>
+
+    <!-- Pass server-side variables to JavaScript -->
+    <script>
+        const defaultLocation = {{ default_location|tojson }};
+        const updateInterval = {{ update_interval }};
+        const staticUrl = "{{ url_for('static', filename='') }}";
+    </script>
+    
+    <!-- Custom JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Emergency debug script -->
+    <script>
+    // Emergency debug and preloader removal
+    window.addEventListener('load', function() {
+      console.log('Window loaded, checking for preloader issues...');
+      
+      // Check if images are loading correctly
+      const images = document.querySelectorAll('img');
+      images.forEach(img => {
+        img.addEventListener('error', function() {
+          console.error('Failed to load image:', img.src);
+        });
+        console.log('Monitoring image:', img.src);
+      });
+      
+      // Check if audio files are loading correctly
+      const audioElements = document.querySelectorAll('audio');
+      audioElements.forEach(audio => {
+        audio.addEventListener('error', function() {
+          console.error('Failed to load audio:', audio.src);
+        });
+        console.log('Monitoring audio:', audio.src);
+      });
+      
+      // Force remove preloader after timeout
+      setTimeout(function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader && getComputedStyle(preloader).display !== 'none') {
+          console.warn('Preloader still visible after timeout, forcing removal');
+          preloader.style.opacity = '0';
+          setTimeout(() => {
+            preloader.style.display = 'none';
+          }, 500);
+        }
+      }, 8000); // 8 second timeout
+      
+      // Check for JavaScript errors
+      window.addEventListener('error', function(e) {
+        console.error('JavaScript error detected:', e.message);
+        console.error('at:', e.filename, 'line:', e.lineno, 'column:', e.colno);
+        
+        // Show error notification if possible
+        if (typeof showNotification === 'function') {
+          showNotification('JavaScript Error', 'Check console for details', 'error');
+        } else {
+          // Create a simple error notification if the function isn't available
+          const notificationDiv = document.createElement('div');
+          notificationDiv.style.position = 'fixed';
+          notificationDiv.style.top = '20px';
+          notificationDiv.style.right = '20px';
+          notificationDiv.style.backgroundColor = 'rgba(255, 50, 50, 0.9)';
+          notificationDiv.style.color = 'white';
+          notificationDiv.style.padding = '15px';
+          notificationDiv.style.borderRadius = '8px';
+          notificationDiv.style.zIndex = '9999';
+          notificationDiv.innerHTML = '<strong>JavaScript Error</strong><br>Check console for details';
+          document.body.appendChild(notificationDiv);
+          
+          // Auto-remove after 8 seconds
+          setTimeout(() => {
+            if (notificationDiv.parentNode) {
+              document.body.removeChild(notificationDiv);
+            }
+          }, 8000);
+        }
+      });
+      
+      console.log('Emergency debug script loaded and running');
+    });
+    </script>
+</body>
+</html>
