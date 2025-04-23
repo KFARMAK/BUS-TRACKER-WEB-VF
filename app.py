@@ -162,7 +162,14 @@ def update_cache():
         # Sleep for the cache duration
         time.sleep(CACHE_DURATION)
 # Add this route to your app.py file to support bus paths
-
+# @app.route('/static/<path:path>')
+# def serve_static(path):
+#     try:
+#         return send_from_directory(app.static_folder, path)
+#     except Exception as e:
+#         logger.error(f"Error serving static file {path}: {e}")
+#         return "File not found", 404
+    
 @app.route('/api/routes/<route_code>')
 def get_route_details(route_code):
     """API endpoint to get detailed route information"""
